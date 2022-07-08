@@ -1,0 +1,168 @@
+1 第一个hello程序，Qt的项目结构
+	创建项目的时候，QWidget、QMainWindow、QDialog
+	QWidget 是所有能看到的窗口或者控件的父类，QMainWindow、QDialog 都继承自它
+	
+	mian函数：
+		QApplication 就是Qt里边每个应用程序有且仅有一个的应用程序对象
+		QApplication ：：exec（） 程序的生命循环、消息循环 当作以下形式：
+		while （1）
+		{
+			if（点击×按钮）
+			{
+				break；
+			}
+			if（点击了最小化按钮）
+			{
+				最小化动作；
+			}
+			......
+		}
+	
+	Widget 头文件:
+		Q_OBJECT // 宏，引入Qt信号和槽的一个宏
+		HelloWindow(QWidget *parent = 0);
+		// parent 窗口指针，父窗口对象的指针
+		// 如果parent为0，或者为NULL，表示当前窗口对象是个顶层窗口
+		// 顶层窗口就是在任务栏中可以找到的窗口
+
+2 父子关系
+	默认情况下按钮没有认干爹的情况下，是个顶层窗口
+	想要按钮显示在窗口上，就要跟窗口 构建父子关系
+	1. serParent
+	2. 构造函数传参
+
+3 Qt坐标系
+	是一父窗口的左上角为（0,0）
+	以向右的方向为x正方向
+	以向下的方向为y正方向
+
+4 Qt 常用API函数
+	move 移动窗口到父窗口的某个位置
+	resize 重新设置窗口的大小
+	setFixedSize 设置窗口的固定大小
+	setWindowTitle 设置窗口标题
+	setGeometry 同时设置窗口的位置和大小
+
+5 对象树
+	概念：各个窗口 对象 通过建立父子关系构造的一个关系树
+	内存管理：
+		父对象释放时，会自动释放各个子对象（使用children列表）
+		
+	以后基本都是使用 new 的方式来创建窗口对象
+	注意点：
+		1.父对象能够被释放
+		2.父对象、子对象、直接或间接继承自 Qboject
+
+6 点击按钮，关闭窗口功能
+	按钮
+	被点击
+	窗口
+	关闭
+
+	建立四者的关系（按钮 被点击 窗口 关闭）
+   	信号发送者
+   	信号
+  	信号接收者
+   	槽：信号的处理动作
+   	通过connect 建立四者之间的关系
+   	connect（btn，&QPushButton::clicked， this，&MainWindow::closed）
+
+	默认情况下，四者是没有关系的
+
+	信号 和 槽， 本质都是 函数
+	connect 中的四个 变量都是 函数指针
+
+7 自定义信号和槽
+	自定义信号
+		1.函数声明在类头文件的signals 域下面
+		2.void 类型的函数，没有返回值
+		3.可以有参数，也可以重载
+		4.只有声明，没有实现定义
+		5.触发信号，emit obj->sign(参数...)
+	自定义槽
+		1.函数声明在类头文件的public/private/protected slots 域下面 (Qt 4以前的版本）
+			Qt 5：就可以声明在类的任何位置，还可以是静态成员函数、全局函数，lambda表达式
+		2.void 类型的函数，没有返回值
+		3.可以有参数，也可以重载
+		4.不仅有声明，还有实现定义
+
+	场景： 下课了，老师说他饿了，学生就请吃饭   	 // 创建类：Teacher，Student
+		信号发送者：老师                         	// teacher 	 new老师对象
+		信号：老师饿了			 // hungry
+		信号接受者：学生          		// student 	new 学生对象
+		槽：请吃饭			// treat
+
+	带参数自定义信号和槽，就声明函数的时候带上参数就行
+	老师说他饿了，说要吃黄焖鸡，学生就请吃黄焖鸡
+		hungry 多加一个参数 Qstring
+		treat 也要一个参数 Qstring
+		因为函数发生了重载，所以要解决
+		1.使用函数指针赋值，让编译器挑选符合类型的函数
+		2.使用static_cast，强制转换，也是让编译器挑选符合类型的函数
+
+8 信号和槽的扩展
+	1. 一个信号可以连接多个槽
+	  一个信号建立了多个connect， 那么当信号发射的时候，槽函数的调用顺序是  随机的
+	2. 一个槽可以连接多个信号
+	3. 信号可以连接信号
+  	  connect（第一个信号发送者，第一个信号， 第二个信号发送者， 第二个信号）
+	4. 信号可以短裤连接
+	  connect（）参数怎么填， disconnect（）的参数就怎么填
+	5.信号和槽的参数的关系，必须满足以下两点
+	（1）信号和槽的参数类型必须一致对应
+	（2）信号和槽的参数个数不需要一致，但信号函数参数 >= 槽函数参数个数
+		hungry(QString)           	->	treat()		ok
+		hungry(QString)           	->	treat(int)		编译出错
+		hungry(QString，int)           	->	treat(int)		编译出错
+
+
+9 Qt 4 的信号和槽
+	使用两个宏  SIGNAL, SLOT
+	connect使用不一样，信号函数声明差不多
+	connect(信号发送者， SIGNAL(函数原型），信号接受者， SLOT(函数原型））
+
+	SIGNAL与SLOT 宏的原理：将后边的参数转换成字符串 类似#define toStr(arq)   *arg -> "arg"
+
+	好处：没有重载二义性
+	坏处：写错了，编译期间不报错
+	推荐：以后都用Qt5de 
+
+10 QDebug 默认将QString转义输出
+	解决方法：
+	（1）将QString 转成 char *	qDebug()<<"Student treat teacher with " << what.toUft8().data();
+	（2）使用qDebug().noquote()	qDebug().noquote()>>"Student treat teacher with " << what;
+
+11 Lambda 表达式：对匿名函数调用的一种形式
+	基本构成：【capture】（parameter）opt->retType{}
+		【局部变量捕获列表】（函数参数）、函数额外属性设置opt、函数返回值->{函数主题}）
+	调用lambda的方式：使用函数指针 void （*p）（）
+	opt :一般会用 mutable
+	函数返回值-> 可省略，但并不代表没有返回值；编译器会自动根据函数体内的return语句判断返回值类型，但是如果有多条return语句，而且返回的类型不一致，编译器会报错
+	
+12、 Qt5.10连接MySQL
+
+Qt5.10.1 + [MinGW53_32] + [5.6.51 for Win64 on x86_32],这个组合不需要编译Qt的MySQL插件.
+只需要将D:\mysql-5.6.51-win32\lib下的dll和lib拷贝到Qt的C:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin
+
+Qt5.10.1 + [MinGW53_32] + [5.7.36 for Win64 on x86_32],这个组合不需要编译Qt的MySQL插件.
+只需要将D:\mysql-5.7.36-win32\lib下的dll和lib拷贝到Qt的C:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin
+
+注意点：这个组合从Qt到MySQL都只能是32位
+	
+13、 Qt5.14连接MySQL
+
+Qt5.14.2 + [MinGW73_64] + [8.0.28 for Win64 on x86_64],这个组合需要重新编译Qt的MySQL插件
+
+注意点1：MySQL8.0为64位的MySQL,是压缩包解压安装，而不是msi安装
+注意点2：Qt版本为5.14,且选择64位的MinGW
+注意点3：需要重新编译Qt的数据库plugin,编译的结果在C:\plugins\sqldrivers
+
+参考视频：https://www.bilibili.com/video/BV1Jk4y167tt?p=1
+
+注意点4：如果MySQL8.0用msi安装，遇到如下问题：
+https://blog.csdn.net/u012328159/article/details/46399311
+https://blog.csdn.net/kilotwo/article/details/79248657
+
+注意点5： MySQL caching_sha2_password
+https://blog.csdn.net/maoxinwen1/article/details/88629313
+https://www.cnblogs.com/yangzhou33/p/11380425.html
